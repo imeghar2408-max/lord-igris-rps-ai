@@ -1,9 +1,12 @@
 # ⚔️ Lord Igris – AI Rock Paper Scissors
 
+
 A cyberpunk-themed Rock Paper Scissors game powered by **MediaPipe Hands** that lets you battle **Lord Igris** using real-time hand gesture recognition.
 
 
 live website: https://imeghar2408-max.github.io/lord-igris-rps-ai/rps.html
+ ## USE YOUR LEFT HAND...
+
 ## ✨ Features
 
 - 🎥 Real-time webcam hand tracking
