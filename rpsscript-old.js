@@ -1,13 +1,7 @@
-// ======================================================
+
 // LORD IGRIS - ROCK PAPER SCISSORS
-// Part 1 - Setup + Camera + MediaPipe
-// ======================================================
-
-
-
-// ======================================================
 // HTML ELEMENTS
-// ======================================================
+
 
 const video = document.getElementById("webcam");
 const canvas = document.getElementById("output-canvas");
@@ -30,6 +24,19 @@ const resetBtn = document.getElementById("reset-btn");
 
 
 
+// SOUND EFFECTS
+
+
+const startSound = new Audio("sounds/start.mp3");
+const uiStartSound = new Audio("sounds/ui-start.mp3");
+const countdownSound = new Audio("sounds/321-go.mp3");
+
+const evilLaughSound = new Audio("sounds/laugh-evil.mp3");
+const loseSound = new Audio("sounds/level-3.mp3");
+const drawSound = new Audio("sounds/grunt.mp3");
+const sarcasticSound = new Audio("sounds/sarcastic.mp3");
+
+
 // ======================================================
 // GAME VARIABLES
 // ======================================================
@@ -47,7 +54,7 @@ let typingInterval = null;
 
 // ======================================================
 // MEDIAPIPE SETUP
-// ======================================================
+
 
 const hands = new Hands({
 
@@ -121,6 +128,8 @@ async function startCamera(){
 
         
             aiMessage.textContent = "> Human Detected ✓";
+            startSound.volume = 0.5;
+            startSound.play();  
 
         };
         
@@ -128,11 +137,14 @@ async function startCamera(){
     }
 
     catch(error){
+        sarcasticSound.currentTime = 0;
+    sarcasticSound.play();
 
         console.log(error);
 
         aiMessage.textContent =
-        "> You there??   ";
+        "> open your camera and refresh the page you puny human";
+
 
     }
 
@@ -155,111 +167,65 @@ function onResults(results){
         canvas.height
     );
 
-
-
-    if(results.multiHandLandmarks){
-
-      if (!duelInProgress) {
-    aiMessage.textContent = "> Challenger Detected ✓";
-}
-else{
-
-    if(!duelInProgress){
-
-        aiMessage.textContent = "> Waiting For Challenger...";
-
-    }
-
-}
-
-
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        
+        // FIX: Only overwrite the text if a duel isn't currently wrapping up or typing
+        if (!duelInProgress && !gameRunning) {
+            aiMessage.textContent = "> Challenger Detected ✓";
+        }
 
         for(const landmarks of results.multiHandLandmarks){
 
             drawConnectors(
-
                 ctx,
-
                 landmarks,
-
                 HAND_CONNECTIONS,
-
                 {
-
                     color:"#00E5FF",
-
                     lineWidth:5
-
                 }
-
             );
-
-
 
             drawLandmarks(
-
                 ctx,
-
                 landmarks,
-
                 {
-
                     color:"#C86BFF",
-
                     radius:6
-
                 }
-
             );
 
+            const gesture = detectGesture(landmarks);
 
+            // Update UI
+            switch(gesture){
+                case "rock":
+                    playerMove.textContent = "✊ Rock";
+                    break;
+                case "paper":
+                    playerMove.textContent = "✋ Paper";
+                    break;
+                case "scissors":
+                    playerMove.textContent = "✌️ Scissors";
+                    break;
+                default:
+                    playerMove.textContent = "🤔 Unknown";
+            }
 
-            // Gesture detection will go here
-            // (Part 2)
-        const gesture = detectGesture(landmarks);
-
-// Update UI
-switch(gesture){
-
-    case "rock":
-        playerMove.textContent = "✊ Rock";
-        break;
-
-    case "paper":
-        playerMove.textContent = "✋ Paper";
-        break;
-
-    case "scissors":
-        playerMove.textContent = "✌️ Scissors";
-        break;
-
-    default:
-        playerMove.textContent = "🤔 Unknown";
-}
-
-// Save the gesture when GO! is active
-if(canCapture){
-
-    playerGesture = gesture;
-
-    canCapture = false;
-
-}
-
-
+            // Save the gesture when GO! is active
+            if(canCapture){
+                playerGesture = gesture;
+                canCapture = false;
+            }
         }
-
     }
-
-    else{
-
-        aiMessage.textContent = "> Waiting For Challenger...";
-
+    else {
+        // FIX: Only revert to waiting if a round isn't processing a result
+        if (!duelInProgress && !gameRunning) {
+            aiMessage.textContent = "> Waiting For Challenger...";
+        }
     }
-
 }
-
-
 
 // ======================================================
 // BUTTON EVENTS
@@ -277,6 +243,12 @@ resetBtn.addEventListener("click",resetGame);
 // ======================================================
 
 function startGame(){
+    uiStartSound.currentTime = 0;
+    uiStartSound.play();
+
+    countdownSound.currentTime = 0;
+    countdownSound.play();
+  
     duelInProgress = true;
 
     if(gameRunning) return;
@@ -324,6 +296,9 @@ function startGame(){
     },500);
 
 }
+    },1000);
+
+}
 
 function getComputerMove(){
 
@@ -363,9 +338,10 @@ function resetGame(){
 }
 function finishRound(){
 
-    gameRunning = false;
+    gameRunning = false; // The game loop finishes, but the duel sequence is still wrapping up
 
     typeMessage("> Scanning complete...");
+
 
     computerChoice.textContent = "🧠";
 
@@ -376,42 +352,51 @@ function finishRound(){
         computerGesture = getComputerMove();
 
         switch(computerGesture){
-
             case "rock":
                 computerChoice.textContent = "✊";
                 break;
-
             case "paper":
                 computerChoice.textContent = "✋";
                 break;
-
             case "scissors":
                 computerChoice.textContent = "✌️";
                 break;
-
         }
 
+        // 1. Run the winner logic (this triggers the random win/lose message)
         decideWinner();
-         duelInProgress = false;
-        startBtn.disabled = false;
+        
+        // 2. KEEP duelInProgress = true for now so MediaPipe doesn't wipe out the text!
+        // Calculate total typing duration: roughly 35ms per character * message length.
+        // We will unlock the game buttons and let MediaPipe take back control after 2.5 seconds.
+        setTimeout(() => {
+            duelInProgress = false;
+            startBtn.disabled = false;
+        }, 2500); 
 
-    },1500);
-
+    }, 100); // Simulate thinking time for Lord Igris
 }
 function decideWinner(){
 
     if(playerGesture===""){
 
         resultText.textContent="No Gesture Detected";
-        gameRunning = false;
-        startBtn.disabled = false;
-        duelInProgress = false;
+        //gameRunning = false;
+        //startBtn.disabled = false;
+        //duelInProgress = false;
+        typeMessage("> Hold up your hand clearly at 'GO!'...");
+         setTimeout(() => {
+            duelInProgress = false;
+            startBtn.disabled = false;
+         }, 2500);
 
         return;
 
     }
 
     if(playerGesture===computerGesture){
+        drawSound.currentTime = 0;
+        drawSound.play();  
 
         resultText.textContent="🤝 Draw";
         const drawLines = [
@@ -447,6 +432,8 @@ typeMessage(randomMessage(drawLines));
         playerScore++;
 
         playerScoreElement.textContent=playerScore;
+        loseSound.currentTime = 0;
+        loseSound.play();
         resultText.textContent = "🎉 You Win!";
         const loseLines = [
 
@@ -471,6 +458,8 @@ typeMessage(randomMessage(loseLines));
         computerScore++;
 
         computerScoreElement.textContent=computerScore;
+        evilLaughSound.currentTime = 0;
+        evilLaughSound.play();
 
         resultText.textContent="👑 Lord Igris Wins!";
         const winLines = [
@@ -591,5 +580,10 @@ function typeMessage(message){
         }
 
     },30);
+
+}
+function randomMessage(messages){
+
+    return messages[Math.floor(Math.random() * messages.length)];
 
 }
