@@ -7,7 +7,7 @@ A cyberpunk-themed Rock Paper Scissors game powered by **MediaPipe Hands** that 
 live website: https://imeghar2408-max.github.io/lord-igris-rps-ai/rps.html
  ## USE YOUR LEFT HAND...
 
-## ✨ Features
+##  Features
 
 - 🎥 Real-time webcam hand tracking
 - ✋ Rock, Paper & Scissors gesture detection
@@ -18,14 +18,14 @@ live website: https://imeghar2408-max.github.io/lord-igris-rps-ai/rps.html
 - 📊 Live scoreboard
 - 🌌 Cyberpunk-inspired UI
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - HTML5
 - CSS3
 - JavaScript
 - Google MediaPipe Hands
 
-## 🚀 Future Improvements
+##  Future Improvements
 
 - Difficulty levels
 - Better gesture recognition
@@ -35,5 +35,5 @@ live website: https://imeghar2408-max.github.io/lord-igris-rps-ai/rps.html
 
 ---
 
-Created with ❤️ by Megha Chauhan
+Created by Megha Chauhan
 
